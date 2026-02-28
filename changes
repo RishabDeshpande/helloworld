@@ -1,0 +1,325 @@
+# WEEK 1 - EC2
+
+## steps
+
+### part 1 - ubuntu instance
+
+1. launch ubuntu ec2
+    1. ubuntu 22.04
+    2. t2.micro
+    3. ssh myip
+2. launch instance
+3. copy public IP
+
+### part 2 - puTTy
+
+1. open puTTygen
+2. click on load and upload the .pem file
+3. save private key and give name .ppk
+4. open puTTy
+5. type ubuntu@<publicip>
+6. go to connection → ssh → auth → credentials
+7. upload the final .ppk file and click on open
+8. accept security alert
+9. in the terminal run whoami
+10. output should be ubuntu
+
+### part 3 - cloudshell
+
+1. open the cloudshell icon in ec2
+2. upload the final key into the cloudshell
+3. run chmod 400 yourkey.pem
+4. run ssh -i yourkey.pem ubuntu@<public dns>
+    1. if connection times out 
+    2. go to ec2 → security groups
+    3. edit inbound rules
+    4. change ssh source to 0.0.0.0/0 temporarily
+5. run the command again 
+6. run whoami
+7. verify ubuntu output
+
+### part 4 - windows ec2 insiance
+
+1. create new ec2 instance
+2. ami - windows 2019 base
+3. t2.micro
+4. new key pair
+5. sg rdp myip
+6. launch
+7. copy public dns
+8. click connect 
+    1. rdp client
+    2. scroll down and click on get password
+    3. wait till available 
+    4. upload pem file
+    5. decrypt password
+    6. note down
+        1. username : Administrator
+        2. password : d&uZ=4oqNusR;9?[PpyK=DF2p.mE](http://ppyk=df2p.me/)!V%.@
+9. win + r
+10. mstsc
+11. paste public dns
+12. connect
+13. enter un and pass
+14. remeote desk opens
+15. close to disconnect
+
+# WEEK 2 - EBS
+
+## steps
+
+### part 1 - attach volume
+
+1. go to ec2 dashboard
+2. launch an ec2 instance make sure amazon ami
+3. got to volumes create a volume 
+    1. same availability zone as the instance 
+    2. choose size
+    3. choose device name
+4. attach the volume to instance
+5. open cmd in the same folder as your pem file
+6. run ssh -i your.pem ec2-user@<public ip>
+7. sudo lsblk
+8. sudo fdisk /dev/devicename
+    1. n
+    2. p
+    3. 1
+    4. enter
+    5. enter
+    6. w
+9. sudo mkfs.xfs /dev/new partition name
+    1. example sudo mkfs.xfs /dev/nvme1n1p1
+10. sudo mkdir /mnt/data
+11. sudo mount /dev/nvme1n1p1 /mnt/data
+12. sudo blkid
+13. nano /etc/fstab
+    1. add this UUID=the id u got   /mnt/data   xfs   defaults,nofail   0   0
+    2. ctrl + x
+14. mount -a
+15. lsblk
+
+### part 2 - vertical scaling
+
+1. stop the instance
+2. click on actions
+    1. instance settings
+    2. change the instance type eg: t3.macro → t3.large
+    3. always increase choose higher type
+3. start the instance again
+4. again ssh 
+5. run free -h
+6. check ram lscpu
+
+### part 3 - snapshot attach to diff ec2 instance new region
+
+1. go to the volume
+2. click actions
+3. click create snapshot
+4. go to snapshots
+5. got to the created snapshots
+6. click actions
+7. click copy snapshot
+8. change zone to west 2 (Oregon)
+9. change zone to Oregon
+10. go to snapshots
+11. click on the snapshot
+12. click on actions
+13. create volume from snapshot
+14. select availability zone
+15. create
+
+# WEEK 3 - EFS
+
+## steps
+
+1. got to ec2
+2. create two instances use amazon linux only
+    1. EFS1
+        1. t2.micro
+        2. subnet 1a
+        3. add sg NFS anywhere
+    2. EFS2
+        1. t2.micro
+        2. subnet 1b
+        3. add sg NFS anywhere
+3. go to EFS
+4. create file system
+    1. go to network
+    2. manage and in the respective subnets make sure that u add the sg of the instances
+5. default VPC
+6. open two command prompts in the .pem directory and run the following in both cmds
+    1. connect to both instances simultaneously
+    2. switch to root sudo su
+    3. mkdir efs
+    4. yum install -y amazon-efs-utils
+7. go to the created file system 
+8. select attach
+9. copy the connect using dns
+    1. use the efs command
+10. to verify
+    1. in one cmd run these
+        1. cd efs
+        2. touch test.txt
+    2. in the other cmd run
+        1. cd efs
+        2. ls
+11. you should get the file name in the second cmd
+
+# WEEK 4 - S3
+
+## steps
+
+### part 1 - bucket creation, uploading , public access
+
+1. go to s3 - creation of bucket
+    1. click create bucket
+    2. enter bucket name
+    3. acls enabled
+    4. uncheck block public access
+    5. create
+2. go to the created bucket
+    1. click on permissions tab
+    2. edit bucket acl 
+    3. everyone public access enable read
+3. uploading
+    1. open the created bucket
+    2. click on upload
+    3. click on add files
+    4. click upload
+4. go to the object 
+    1. go to permissions tab
+    2. acls enable BOTH the reads
+    3. copy the object URL 
+    4. paste in incog 
+
+### part 2 - versioning and CRR
+
+versioning
+
+1. go to bucket properties
+2. enable versioning
+3. upload the same file again
+4. enable show versions in the bucket
+
+crr
+
+1. open s3 in another region
+2. create destination bucket
+3. follow the same steps
+4. enable versioning
+5. go to source bucket
+6. open management tab
+7. create a replication rule
+8. change the scope to all objects
+9. choose the destination bucket
+10. choose lab role IAM
+11. create rule
+12. in source bucket add a new file
+13. it will automatically show in destination bucket on refresh
+
+### part 3 - static web hosting
+
+1. create two html files
+    1. index.html
+    2. error.html
+2. upload the html files to the bucket
+3. go to the properties tab
+    1. scroll down to static web hosting
+    2. enter the file names
+4. enable reads in acls for the bucket and objects
+5. go to properties tab
+6. scroll to static web hosting
+7. copy the url
+8. open the url in incog
+9. then change the url
+    1. eg: http://bucketrythma.s3-website-us-east-1.amazonaws.com/abc.html
+10. initial should show you index page after change the error page
+
+# WEEK 5 - VPC
+
+## steps
+
+1. go to vpc
+    1. create vpc
+        1. vpc only
+        2. 10.0.0.0/16
+    2. create
+2. go to subnets
+    1. create subnet
+        1. select your vpc
+        2. public subnet
+        3. us east 1a
+        4. 10.0.1.0/24
+    2. create
+    3. create another subnet
+        1. select your vpc
+        2. private
+        3. same az
+        4. 10.0.2.0/24
+3. go to internet gateways
+    1. create
+    2. attach to vpc
+4. go to route tables
+    1. create public rt
+    2. choose your vpc
+    3. go to the created rt
+    4. go to routes
+    5. edit routes
+    6. add route
+        1. 0.0.0.0/0
+        2. internet gateway
+    7. go to subnet associations
+        1. associate with public
+    8. create private rt
+    9. do not add 0.0.0.0/0
+    10. associate with private subnet
+5. go to public subnet
+    1. edit subnet settings
+    2. enable auto assign ipv4
+6. go to security groups
+7. create sg
+    1. attach your vpc
+    2. add ssh,myip and http,anywhere inbounds
+8. create ec2 instances
+    1. public
+        1. choose your vpc
+        2. choose public 
+        3. enable auto assign ip
+        4. attach your sg
+    2. private
+        1. choose your vpc
+        2. choose private
+        3. disable auto assign
+        4. attach same sg
+9. launch the instances
+    1. connect to the public instance using ssh and public ip
+    2. once connected run ping 8.8.8.8
+10. to the private u cannot connect show tht
+
+# WEEK 6 - VPC through NAT
+
+## steps
+
+1. do the same as vpc
+2. name public ec2 as bastion server
+3. and private as dbserver
+4. go to ec2 click allocate elastic ip
+5. keep default settings
+6. go to vpc
+    1. go to nat gateways
+    2. create nat gateway
+    3. select public subnet
+    4. select your latest elastic ip (first change from automatic to manual)
+7. go to route tables
+8. privatert
+9. edit routes
+    1. 0.0.0.0/0
+    2. nat gateway
+10. ssh into your public ip
+    1. scp -i yourkey.pem yourkey.pem ec2-user@<Public-IP>:~
+    2. chmod 400 vpc.pem
+    3. go to your cmd where public ssh is connected now connect with same .pem but private ip
+    4. edit the sg from private ec2
+        1. edit inbound rule
+        2. ssh, custom, vpc cidr block 10.0.0.0/16
+        3. then connect and ping google.com
